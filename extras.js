@@ -45,8 +45,20 @@
 
   /* ---------- photos + travellers ---------- */
   function load(url) { return fetch(url, { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }); }
-  Promise.all([load("photos.json"), load("travellers.json")]).then(function (res) {
+  Promise.all([load("photos.json"), load("travellers.json"), load("positions.json")]).then(function (res) {
     PHOTOS = res[0] || {}; TRAVEL = res[1] || {};
+    var POS = res[2] || {}, moved = 0;
+    WORKS.forEach(function (w) {
+      var p = POS[w.id]; if (!p) return;
+      if (typeof p.lat === "number" && typeof p.lon === "number") {
+        w.lat = p.lat; w.lon = p.lon;
+        var m = markers.get(w.id); if (m) m.setLatLng([p.lat, p.lon]);
+        moved++;
+      }
+      if (p.conf) w.conf = p.conf;
+      if (p.note) w.notes = p.note + (w.notes ? " | " + w.notes : "");
+    });
+    if (moved) apply();
     markTravel();
     if (state.sel != null) renderCard(WORKS.find(function (x) { return x.id === state.sel; }));
   });
